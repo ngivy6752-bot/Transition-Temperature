@@ -1,0 +1,703 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ME2301 Transition Temperature</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Lexend:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* Layout: game-style virtual lab — hero with mission tracker, 4 numbered steps, big live readouts, graph as the reward */
+:root{
+  --bg:#f1f2fb; --panel:#ffffff; --ink:#1a1b3d; --muted:#5f6189; --line:#dcdef0; --tint:#eceafe;
+  --accent:#ff5a1f; --accent-ink:#ffffff; --pop:#5b4cff; --steel:#4a5f86;
+  --mild:#1d8fe0; --med:#8a4fe0; --high:#e0345a;
+  --cold:#1d8fe0; --hot:#ff5a1f; --brittle:#11a36a;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Lexend",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1030; --panel:#1a1b46; --ink:#eef0ff; --muted:#a5a8d6; --line:#2e3070; --tint:#24236a;
+  --accent:#ff7a45; --accent-ink:#1a0b05; --pop:#9b90ff; --steel:#9fb2d8;
+  --mild:#4fb3ff; --med:#b58cff; --high:#ff6b8a; --cold:#4fb3ff; --hot:#ff7a45; --brittle:#3ddc97; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1030; --panel:#1a1b46; --ink:#eef0ff; --muted:#a5a8d6; --line:#2e3070; --tint:#24236a;
+  --accent:#ff7a45; --accent-ink:#1a0b05; --pop:#9b90ff; --steel:#9fb2d8;
+  --mild:#4fb3ff; --med:#b58cff; --high:#ff6b8a; --cold:#4fb3ff; --hot:#ff7a45; --brittle:#3ddc97; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+/* hero */
+.hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:20px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:26px 26px 32px;overflow:hidden}
+@media (max-width:860px){.hero{grid-template-columns:minmax(0,1fr)}}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:8px;background:linear-gradient(90deg,var(--cold),var(--pop) 45%,var(--hot))}
+.eyebrow{font:600 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--pop)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,4.6vw,48px);line-height:1.02;margin:8px 0 10px;text-wrap:balance;letter-spacing:-.01em}
+h1 span{display:block;color:var(--accent)}
+.lede{margin:0;font-size:17px;max-width:46ch;color:var(--ink)}
+.spec{margin-top:12px;font:12px var(--f-mono);color:var(--muted)}
+.toptools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:16px;font-size:12.5px;color:var(--muted)}
+.toptools .ghost{flex:none;padding:9px 16px;border-color:var(--high);color:var(--high)}
+.toptools .ghost:hover{background:var(--high);color:var(--panel);border-color:var(--high)}
+.mission{background:var(--tint);border-radius:16px;padding:16px;min-width:0}
+.mission h3{margin:0 0 10px;font:700 14px var(--f-display);letter-spacing:.02em}
+.mrow{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
+.mrow:first-of-type{border-top:0}
+.mrow .dot{width:12px;height:12px;border-radius:50%}
+.mrow small{display:block;color:var(--muted);font-size:12px}
+.chip{font:600 11px var(--f-mono);padding:4px 9px;border-radius:999px;white-space:nowrap;border:1.5px solid var(--line);color:var(--muted)}
+.chip.done{background:var(--brittle);border-color:var(--brittle);color:var(--panel)}
+.mbar{height:8px;border-radius:999px;background:var(--panel);margin-top:12px;overflow:hidden}
+.mbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pop),var(--accent));border-radius:999px;transition:width .5s ease}
+.mtxt{font:600 12px var(--f-mono);color:var(--muted);margin-top:6px}
+
+.grid{display:grid;grid-template-columns:minmax(0,390px) minmax(0,1fr);gap:20px}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+h2{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:17px;margin:0 0 12px;letter-spacing:-.005em;text-wrap:balance}
+.step{flex:none;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--pop);color:var(--panel);font:800 14px var(--f-display)}
+.hint{margin:-4px 0 12px;font-size:13.5px;color:var(--muted)}
+.std{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+
+/* steel picker */
+.steels{display:grid;gap:8px}
+.steel{display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:12px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:transform .12s,border-color .12s,background .12s}
+.steel:hover{transform:translateY(-1px);border-color:var(--muted)}
+.steel:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--pop);outline-offset:2px}
+.steel[aria-pressed="true"]{border-color:var(--pop);background:var(--tint)}
+.sw{width:16px;height:16px;border-radius:50%}
+.steel b{display:block;font-weight:600}
+.steel small{color:var(--muted);font-size:12.5px}
+.steel .c{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.props{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px;margin:14px 0 0;padding:12px 14px;border-radius:12px;background:var(--tint)}
+.props dt{color:var(--muted)} .props dd{margin:0;font-family:var(--f-mono);font-weight:600}
+
+/* temperature */
+.temp-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.temp-val{font-family:var(--f-display);font-weight:800;font-size:52px;line-height:1;font-variant-numeric:tabular-nums;transition:color .2s}
+.temp-val small{font-size:22px;color:var(--muted)}
+.zone{font:600 12px var(--f-mono);padding:5px 10px;border-radius:999px;background:var(--tint);color:var(--ink);text-align:center}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:14px;margin:16px 0 6px;border-radius:999px;background:linear-gradient(90deg,var(--cold),var(--pop) 45%,var(--hot));cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--panel);border:4px solid var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--panel);border:4px solid var(--ink)}
+.ticks{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.presets button{font:600 12px var(--f-mono);padding:6px 11px;border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;cursor:pointer}
+.presets button:hover{border-color:var(--pop);color:var(--pop)}
+
+/* buttons */
+.strike{width:100%;padding:16px;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);font:800 18px var(--f-display);letter-spacing:.02em;cursor:pointer;box-shadow:0 6px 0 color-mix(in srgb,var(--accent) 55%,#000);transition:transform .08s,box-shadow .08s}
+.strike:hover{filter:brightness(1.05)}
+.strike:active{transform:translateY(4px);box-shadow:0 2px 0 color-mix(in srgb,var(--accent) 55%,#000)}
+.strike:disabled{opacity:.6;cursor:wait;transform:translateY(4px);box-shadow:0 2px 0 color-mix(in srgb,var(--accent) 55%,#000)}
+.row2{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.ghost{flex:1 1 150px;padding:10px;border:2px solid var(--line);background:transparent;color:var(--ink);border-radius:12px;font:600 13px var(--f-body);cursor:pointer}
+.ghost:hover{border-color:var(--pop);color:var(--pop)}
+.asktemp{margin:0 0 12px;padding:10px 14px;border-radius:12px;font-size:14px;background:var(--tint);border:2px solid var(--pop)}
+.asktemp b{font-family:var(--f-display);font-weight:700;color:var(--pop)}
+.asktemp.need{border-color:var(--high);background:color-mix(in srgb,var(--high) 8%,var(--panel))}
+.asktemp.need b{color:var(--high)}
+.panel.ask{box-shadow:0 0 0 3px var(--pop);animation:askpulse 1.6s ease-in-out infinite}
+@keyframes askpulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--pop) 35%,transparent)}}
+.tcount{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--tint);font-size:13.5px}
+.tcount .bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+.tcount .slot{padding:6px 4px;border-radius:8px;border:2px dashed var(--line);text-align:center;font:600 12px var(--f-mono);color:var(--muted);min-width:0}
+.tcount .slot.on{border-style:solid;border-color:var(--pop);background:var(--panel);color:var(--ink)}
+.tcount .more{margin-top:6px;font:12px var(--f-mono);color:var(--muted)}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:12px}
+
+canvas{display:block;width:100%}
+#rig{aspect-ratio:1/0.82;max-width:100%}
+
+/* readouts */
+.readouts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:620px){.readouts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ro{padding:14px;border-radius:16px;background:var(--panel);border:1px solid var(--line);min-width:0}
+.ro .k{font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ro .v{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3vw,30px);font-variant-numeric:tabular-nums;line-height:1.2;white-space:nowrap}
+.ro .v small{font-size:.5em;color:var(--muted);font-weight:500}
+.ro.main{background:var(--accent);border-color:var(--accent)}
+.ro.main .k,.ro.main .v,.ro.main .v small{color:var(--accent-ink)}
+.pop{animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{0%{transform:scale(.7)}100%{transform:scale(1)}}
+.mode{display:inline-block;font:700 12px var(--f-mono);padding:4px 10px;border-radius:999px;margin-top:6px;border:2px solid currentColor}
+.mode.brittle{color:var(--cold)} .mode.trans{color:var(--med)} .mode.ductile{color:var(--hot)}
+.verdict{margin:12px 0 0;font-size:14.5px;padding:12px 14px;border-radius:12px;background:var(--tint)}
+.verdict b{font-family:var(--f-display);font-weight:700}
+
+/* chart */
+#chart{aspect-ratio:16/10;max-width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:3px;border-radius:2px}
+.legend .lg{color:var(--ink)} .legend .lg b{font-weight:600}
+.legend svg{flex:none}
+.dbtt-note{margin:12px 0 0;font-size:14.5px;max-width:80ch;padding:12px 14px;border-radius:12px;background:var(--tint)}
+.dbtt-note b{font-family:var(--f-display);font-weight:700;color:var(--accent)}
+
+/* tables + form */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+th{font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px;border-bottom:2px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+td.n{font-family:var(--f-mono);text-align:right}
+th.n{text-align:right}
+tbody tr:hover td{background:var(--tint)}
+.empty{color:var(--muted);font-size:13.5px;padding:10px 0}
+.note{font-size:13.5px;color:var(--muted);max-width:75ch}
+.bform{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.bform label{display:flex;flex-direction:column;gap:5px;font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.bform input,.bform select{font:15px var(--f-mono);padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);text-transform:none;letter-spacing:0;min-width:0}
+.bform .strike{padding:11px;font-size:15px}
+.berr{color:var(--high);font-size:13.5px;margin-top:10px;font-weight:600}
+.bform input.bad{border-color:var(--high);background:color-mix(in srgb,var(--high) 10%,var(--bg))}
+.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pending{margin:0 0 14px;padding:12px 14px;border-radius:14px;border:2px solid var(--high);background:color-mix(in srgb,var(--high) 8%,var(--panel))}
+.pending b{display:block;margin-bottom:8px}
+.pending .chips{display:flex;flex-wrap:wrap;gap:6px}
+.pending button{font:600 12px var(--f-mono);padding:6px 11px;border-radius:999px;border:1.5px solid var(--high);background:var(--panel);color:var(--ink);cursor:pointer}
+.pending button:hover{background:var(--high);color:var(--panel)}
+.nudge{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:10px;padding:12px 14px;border-radius:12px;border:2px solid var(--high);background:color-mix(in srgb,var(--high) 8%,var(--panel));font-size:14px}
+.nudge button{flex:none;padding:8px 14px;border:0;border-radius:999px;background:var(--high);color:var(--panel);font:600 13px var(--f-body);cursor:pointer}
+.flash{animation:flash 1.2s}
+@keyframes flash{0%,60%{box-shadow:0 0 0 4px var(--high)}100%{box-shadow:0 0 0 0 transparent}}
+.btbl{min-width:480px}
+.del{border:1.5px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;font:12px var(--f-body);padding:3px 10px;cursor:pointer}
+.del:hover{color:var(--high);border-color:var(--high)}
+.guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 14px}
+@media (max-width:620px){.guide{grid-template-columns:minmax(0,1fr)}}
+.guide div{padding:10px 12px;border-radius:12px;background:var(--tint);font-size:13px;min-width:0}
+.guide b{display:block;font-family:var(--f-display);font-size:13px;margin-bottom:2px}
+.formula{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin:0 0 14px;padding:14px 16px;border:2px dashed var(--brittle);border-radius:14px}
+.formula .eq{font:800 clamp(16px,2.4vw,22px) var(--f-display);letter-spacing:-.01em;white-space:nowrap}
+.formula .eq .b{color:var(--brittle)} .formula .eq .s{color:var(--hot)}
+.formula .ex{font:500 13.5px var(--f-mono);color:var(--muted);min-width:0}
+.formula .ex b{color:var(--ink)}
+
+/* fact + maths */
+.fact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--pop);color:var(--panel);border-radius:18px;padding:18px 20px}
+.fact .eyebrow{color:inherit;opacity:.85}
+.fact p{margin:4px 0 0;font-size:15.5px;max-width:70ch}
+.fact button{border:2px solid currentColor;background:transparent;color:inherit;border-radius:999px;padding:8px 14px;font:600 13px var(--f-body);cursor:pointer;white-space:nowrap}
+@media (max-width:620px){.fact{grid-template-columns:minmax(0,1fr)}}
+details.maths{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 18px}
+details.maths summary{cursor:pointer;font:700 15px var(--f-display)}
+details.maths p{margin:10px 0 0}
+.dock{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:20;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;max-width:calc(100% - 32px)}
+.voice{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:999px;border:0;background:var(--ink);color:var(--panel);font:600 14px var(--f-body);cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.voice svg{flex:none}
+.voice[aria-pressed="false"]{background:var(--panel);color:var(--muted);border:2px solid var(--line)}
+.voice .wave{transform-origin:center}
+.voice.talking .wave{animation:talk .6s ease-in-out infinite alternate}
+@keyframes talk{from{opacity:.3}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Virtual lab · Charpy impact test</div>
+      <h1>ME2301 <span>Transition Temperature</span></h1>
+      <p class="lede">Freeze it. Heat it. Smash it. Find the temperature where steel stops bending and starts snapping like glass.</p>
+      <div class="spec">Tester ZwickRoell HIT450P · 450 J max · V-notch specimen 10×10×55 mm · 2 mm notch</div>
+      <div class="toptools"><button class="ghost" id="clear" type="button">Erase all data</button><span>Clears every test and % brittle reading so you can start fresh.</span></div>
+    </div>
+    <aside class="mission" aria-label="Mission tracker">
+      <h3>Mission: find all 3 DBTTs</h3>
+      <div id="mission"></div>
+      <div class="mbar"><i id="mbar"></i></div>
+      <div class="mtxt" id="mtxt"></div>
+    </aside>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <section class="panel">
+        <h2><span class="step">1</span>Pick your steel</h2>
+        <p class="hint">More carbon makes steel harder, but also easier to shatter.</p>
+        <div class="steels" id="steels"></div>
+        <dl class="props" id="props"></dl>
+      </section>
+
+      <section class="panel" id="tempPanel">
+        <h2><span class="step">2</span>Set the temperature</h2>
+        <div class="asktemp" id="askT" aria-live="polite" hidden></div>
+        <div class="temp-row">
+          <div class="temp-val" id="tval">20<small> °C</small></div>
+          <div class="zone" id="tzone"></div>
+        </div>
+        <input type="range" id="temp" min="-50" max="100" step="1" value="20" aria-label="Test temperature in degrees Celsius">
+        <div class="ticks"><span>−50</span><span>−25</span><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        <div class="presets" id="presets"></div>
+      </section>
+
+      <section class="panel">
+        <h2><span class="step">3</span>Smash it</h2>
+        <button class="strike" id="strike">Release pendulum</button>
+        <div class="tcount" id="tcount" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <div class="readouts" aria-live="polite">
+        <div class="ro main"><div class="k">Energy absorbed</div><div class="v" id="rE">—<small> J</small></div></div>
+        <div class="ro"><div class="k">Rise angle β</div><div class="v" id="rB">—<small> °</small></div></div>
+        <div class="ro"><div class="k">Shear fracture</div><div class="v" id="rS">—<small> %</small></div></div>
+        <div class="ro"><div class="k">Fracture mode</div><div id="rM"><span class="mode" style="color:var(--muted)">awaiting strike</span></div></div>
+      </div>
+
+      <section class="panel">
+        <h2>The pendulum</h2>
+        <canvas id="rig" aria-label="Animated Charpy pendulum"></canvas>
+        <p class="verdict" id="verdict">Pick a steel, set a temperature, then release the pendulum.</p>
+        <div class="nudge" id="nudge" hidden></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel">
+    <h2>Your DBTT graph</h2>
+    <p class="hint">Energy curve (left axis) meets your % brittle curve (right axis). Where they cross is the ductile-to-brittle transition temperature.</p>
+    <canvas id="chart" aria-label="Absorbed energy and percent brittle versus temperature"></canvas>
+    <div class="legend" id="legend"></div>
+    <p class="dbtt-note" id="dbttNote"></p>
+  </section>
+
+  <section class="panel">
+    <h2><span class="step">4</span>Read the fracture surface</h2>
+    <div class="guide">
+      <div><b>Shiny + flat</b>Brittle. Crystals split apart (cleavage). Close to 100% brittle.</div>
+      <div><b>Half and half</b>In the transition zone. Shiny centre, dull torn edges.</div>
+      <div><b>Dull + fibrous</b>Ductile. Metal stretched and tore (shear). Close to 0% brittle.</div>
+    </div>
+<div class="formula" aria-live="polite">
+      <div class="eq"><span class="b">% Brittle</span> = 100% − <span class="s">% Shear</span></div>
+      <div class="ex" id="bEx">Break a specimen to see a worked example.</div>
+    </div>
+    <p class="note" style="margin:0 0 12px">Every strike plots its % brittle on the graph automatically, using the formula above. You can also look at a broken face, estimate how much is shiny and flat, and enter your own value. Your estimate replaces the calculated one at that temperature.</p>
+    <div class="pending" id="bPend" hidden></div>
+    <form id="bform" class="bform" novalidate>
+      <label for="bSteel">Steel<select id="bSteel"></select></label>
+      <label for="bTemp">Temperature (°C)<input id="bTemp" type="number" min="-50" max="100" step="1" inputmode="numeric"></label>
+      <label for="bPct">% Brittle<input id="bPct" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="0–100"></label>
+      <button class="strike" type="submit" id="bAdd">Plot point</button>
+    </form>
+    <div class="berr" id="bErr" hidden></div>
+    <div class="legend" id="bLegend"></div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="btbl">
+        <thead><tr><th>Steel</th><th class="n">Temp (°C)</th><th class="n">% Brittle</th><th class="n">% Shear</th><th>From</th><th></th></tr></thead>
+        <tbody id="bBody"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="bEmpty">No % brittle values yet. Break a specimen or enter a value above to start your curve.</div>
+  </section>
+
+  <section class="fact" aria-live="polite">
+    <div><div class="eyebrow">Real-world fracture</div><p id="factTxt"></p></div>
+    <button type="button" id="factNext">Next fact</button>
+  </section>
+
+  <section class="panel">
+    <h2>Lab notebook</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Steel</th><th class="n">Temp (°C)</th><th class="n">Energy (J)</th><th class="n">Rise β (°)</th><th class="n">Shear (%)</th><th class="n">Brittle (%)</th><th>Mode</th></tr></thead>
+        <tbody id="log"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="logEmpty">No specimens broken yet. Pick a steel and temperature, then release the pendulum.</div>
+  </section>
+
+  <div class="dock">
+  <button class="voice" id="sfxBtn" type="button" aria-pressed="true" aria-label="Fracture sound"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 6 13h5l-1 9 8-12h-5z" style="fill:currentColor"/></svg><span id="sfxLbl">Sound on</span></button>
+  <button class="voice" id="voiceBtn" type="button" aria-pressed="true" aria-label="Voice cues"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" style="fill:currentColor"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" style="fill:none;stroke:currentColor" stroke-width="2" stroke-linecap="round"/></svg><span id="voiceLbl">Voice cues on</span></button>
+  </div>
+
+  <details class="maths">
+    <summary>How the maths works</summary>
+    <p class="note">Absorbed energy is calculated, not randomised, from the standard hyperbolic-tangent transition model E(T) = LS + (US − LS)/2 · [1 + tanh((T − T₀)/C)]. LS is the lower-shelf (brittle cleavage) energy, US the upper-shelf (ductile shear) energy, T₀ the mid-energy DBTT and C the half-width of the transition zone. The values follow the known trend for normalised plain-carbon steels (Rinebolt &amp; Harris): more carbon lowers the upper shelf and raises the transition temperature. Percent shear is taken as proportional to energy between the shelves, so the 50% FATT equals T₀. The 27 J line is the common acceptance criterion used in structural steel standards. Real results also depend on heat treatment, grain size and specimen orientation. Rise angle comes from E = mgR(cos β − cos α) with drop angle α = 150° on a ZwickRoell HIT450P pendulum impact tester (450 J maximum energy).</p>
+  </details>
+</div>
+
+<script>
+const STEELS = {
+  mild:{name:"Mild steel",grade:"AISI 1018",c:"0.15–0.25 % C",US:200,LS:6,T0:10,C:15,ts:"440 MPa",hb:"126 HB",col:"--mild"},
+  med:{name:"Medium carbon steel",grade:"AISI 1045",c:"0.30–0.60 % C",US:110,LS:5,T0:25,C:22,ts:"625 MPa",hb:"170 HB",col:"--med"},
+  high:{name:"High carbon steel",grade:"AISI 1080",c:"0.60–1.0 % C",US:45,LS:3,T0:65,C:28,ts:"965 MPa",hb:"250 HB",col:"--high"}
+};
+const ALPHA = 150*Math.PI/180, CAP = 450, MGR = CAP/(1-Math.cos(ALPHA));
+let sel="mild", T=20, log=[], busy=false;
+const MIN_T=4;   // temperatures that must be tested per steel before curves and DBTT are shown
+const tempsTested=k=>[...new Set(log.filter(r=>r.k===k).map(r=>r.t))].sort((a,b)=>a-b);
+const ready=k=>tempsTested(k).length>=MIN_T;
+let pend={ang:ALPHA, broken:false, flyL:0, last:null};
+
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+// ---------- fracture sound (Web Audio, synthesised: sharp crack when brittle, dull thud and tear when ductile)
+let AC=null,sfxOn=true;try{sfxOn=localStorage.getItem("charpySfx")!=="off"}catch(e){}
+function audio(){try{if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;AC=new C()}if(AC.state==="suspended")AC.resume();return AC}catch(e){return null}}
+function noiseBuf(a,sec){const n=Math.floor(a.sampleRate*sec),b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;return b}
+function env(a,g,t,peak,dur){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t+dur)}
+function fractureSound(shearPct,energy){if(!sfxOn)return;const a=audio();if(!a)return;
+  const t=a.currentTime+0.01,br=1-shearPct/100,loud=0.55+0.45*Math.min(1,energy/200),out=a.createGain();out.gain.value=0.9;out.connect(a.destination);
+  // hammer strike: short low thump, every test
+  {const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(55,t+0.18);env(a,g,t,0.7*loud,0.22);o.connect(g).connect(out);o.start(t);o.stop(t+0.25)}
+  // brittle crack: bright, very short noise snap + metallic ring
+  if(br>0.05){const n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=noiseBuf(a,0.2);f.type="highpass";f.frequency.value=2200;env(a,g,t,0.9*br,0.07);n.connect(f).connect(g).connect(out);n.start(t);
+    const n2=a.createBufferSource(),f2=a.createBiquadFilter(),g2=a.createGain();n2.buffer=noiseBuf(a,0.1);f2.type="bandpass";f2.frequency.value=4200;f2.Q.value=1.2;env(a,g2,t+0.035,0.5*br,0.05);n2.connect(f2).connect(g2).connect(out);n2.start(t+0.035);
+    for(const [hz,dl] of [[2650,.45],[3920,.3]]){const o=a.createOscillator(),g3=a.createGain();o.type="triangle";o.frequency.value=hz;env(a,g3,t,0.12*br,dl);o.connect(g3).connect(out);o.start(t);o.stop(t+dl+0.05)}}
+  // ductile tear: longer, darker, fluttering noise (metal stretching and tearing)
+  if(br<0.95){const du=1-br,len=0.25+0.4*du,n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain(),lfo=a.createOscillator(),lg=a.createGain();
+    n.buffer=noiseBuf(a,len+0.1);f.type="lowpass";f.frequency.setValueAtTime(1400,t);f.frequency.exponentialRampToValueAtTime(350,t+len);
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.55*du*loud,t+0.03);g.gain.exponentialRampToValueAtTime(0.0001,t+len);
+    lfo.frequency.value=38;lg.gain.value=0.18*du;lfo.connect(lg).connect(g.gain);n.connect(f).connect(g).connect(out);n.start(t);lfo.start(t);lfo.stop(t+len+0.05)}}
+// ---------- voice cues (browser speech synthesis; speaks only after the student clicks something)
+const canSpeak="speechSynthesis" in window&&"SpeechSynthesisUtterance" in window;
+let voiceOn=true;try{voiceOn=localStorage.getItem("charpyVoice")!=="off"}catch(e){}
+let voicePick=null;
+function pickVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
+  voicePick=vs.find(v=>/en-GB|en-SG|en-AU/i.test(v.lang)&&/female|natural|google|samantha|serena|libby|sonia/i.test(v.name))||vs.find(v=>/en-GB|en-SG/i.test(v.lang))||vs[0]||null}catch(e){}}
+if(canSpeak){pickVoice();try{speechSynthesis.onvoiceschanged=pickVoice}catch(e){}}
+const speakable=t=>String(t).replace(/≈/g,"about ").replace(/[−–]\s?(?=\d)/g,"negative ").replace(/(^|[\s(])-(?=\d)/g,"$1negative ").replace(/\+(?=\d)/g,"")
+  .replace(/°C/g," degrees Celsius").replace(/°/g," degrees").replace(/(\d)\s?J\b/g,"$1 jools").replace(/\bjoules\b/gi,"jools").replace(/%/g," percent").replace(/DBTT/g,"D B T T").replace(/FATT/g,"F A T T").replace(/·/g,",").replace(/\s+/g," ");
+function say(t){if(!voiceOn||!canSpeak||!t)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(speakable(t));
+  if(voicePick)u.voice=voicePick;u.lang=voicePick?voicePick.lang:"en-GB";u.rate=1.02;u.pitch=1.05;
+  const b=document.getElementById("voiceBtn");u.onstart=()=>b&&b.classList.add("talking");u.onend=u.onerror=()=>b&&b.classList.remove("talking");
+  speechSynthesis.speak(u)}catch(e){}}
+const E=(k,t)=>{const s=STEELS[k];return s.LS+(s.US-s.LS)/2*(1+Math.tanh((t-s.T0)/s.C))};
+const shear=(k,e)=>{const s=STEELS[k];return Math.max(0,Math.min(100,(e-s.LS)/(s.US-s.LS)*100))};
+const mode=p=>p<20?["Brittle · snapped","brittle"]:p>80?["Ductile · tore","ductile"]:["Mixed · transition","trans"];
+// temperature where E reaches a target energy (inverse tanh); null if the curve never reaches it
+const Tat=(k,target)=>{const s=STEELS[k];const y=2*(target-s.LS)/(s.US-s.LS)-1;return Math.abs(y)<1?s.T0+s.C*Math.atanh(y):null};
+const fmtT=t=>t==null?"not reached":`${t>0?"+":""}${t.toFixed(0)} °C`;
+const beta=e=>Math.acos(Math.max(-1,Math.min(1,Math.cos(ALPHA)+e/MGR)));
+
+// steel buttons
+const sb=$("steels");
+for(const k in STEELS){const s=STEELS[k];const b=document.createElement("button");b.className="steel";b.id="s-"+k;
+  b.innerHTML=`<span class="sw" style="background:var(${s.col})"></span><span><b>${s.name}</b><small>${s.grade}</small></span><span class="c">${s.c}</span>`;
+  b.onclick=()=>{sel=k;sync();say(`${s.name} selected. `+(tempsTested(k).length<MIN_T?`Select your ${nextOrd(k)} temperature.`:"All 4 temperatures done for this steel."));askAgain()};sb.appendChild(b)}
+// presets
+for(const t of [-50,-20,0,20,50,100]){const b=document.createElement("button");b.textContent=(t>0?"+":"")+t+" °C";b.onclick=()=>{T=t;$("temp").value=t;sync();sayTemp()};$("presets").appendChild(b)}
+// legend
+function renderLegend(){const s=STEELS[sel];
+ $("legend").innerHTML=
+ `<span class="lg"><svg width="30" height="12" aria-hidden="true"><line x1="1" y1="6" x2="29" y2="6" style="stroke:var(${s.col})" stroke-width="3" stroke-linecap="round"/><circle cx="15" cy="6" r="4" style="fill:var(--panel);stroke:var(${s.col})" stroke-width="2"/></svg><b>Absorbed energy (J)</b> · solid curve, left axis</span>`+
+ `<span class="lg"><svg width="30" height="12" aria-hidden="true"><line x1="1" y1="6" x2="29" y2="6" style="stroke:var(--brittle)" stroke-width="2" stroke-dasharray="6 4"/><rect x="10.5" y="1.5" width="9" height="9" style="fill:var(--brittle)"/></svg><b>% Brittle fracture</b> · dashed curve, right axis</span>`+
+ `<span class="lg"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" style="fill:var(--panel);stroke:var(--ink)" stroke-width="2.5"/></svg>Intersection = DBTT</span>`+
+ `<span class="lg" style="color:var(--muted)">${s.name}</span>`}
+
+$("temp").oninput=e=>{T=+e.target.value;sync()};
+function sayTemp(){const ts=tempsTested(sel),n=ts.length;
+  if(n<MIN_T&&ts.includes(T)){say(`You already tested ${T} °C. Please select your ${ORD[n]} temperature.`);askAgain();return}
+  clearTimeout(askTimer);
+  say(`${T} °C. ${$("tzone").textContent.replace(":",",")}.`+(n<MIN_T?` That's your ${ORD[n]} temperature. Press release pendulum.`:" Press release pendulum when ready."))}
+$("temp").onchange=sayTemp;
+
+function sync(){
+  for(const k in STEELS)$("s-"+k).setAttribute("aria-pressed",k===sel);
+  const s=STEELS[sel];
+  renderProps();
+  $("tval").innerHTML=`${T>0?"+":""}${T}<small> °C</small>`;$("tval").style.color=T<0?"var(--cold)":T>40?"var(--hot)":"var(--ink)";
+  if(document.activeElement!==$("bTemp"))$("bTemp").value=T;if(document.activeElement!==$("bSteel"))$("bSteel").value=sel;
+  const d=T-s.T0;$("tzone").textContent=d<-s.C*1.2?"Cold: brittle zone":d>s.C*1.2?"Warm: ductile zone":"Transition zone";
+  pend.broken=false;pend.ang=ALPHA;pend.last=null;drawRig();drawChart();
+}
+
+function test(k,t){let e=E(k,t);e=Math.min(CAP,e);
+  const p=shear(k,e);return{k,t,e,b:beta(e)*180/Math.PI,p,m:mode(p)}}
+
+function showBEx(r){if(!r){$("bEx").textContent="Break a specimen to see a worked example.";return}const sh=Math.round(r.p);
+  $("bEx").innerHTML=`Last strike (${STEELS[r.k].name}, ${r.t>0?"+":""}${r.t} °C): <b>% Brittle = 100% − ${sh}% = ${100-sh}%</b>`}
+function show(r){showBEx(r);
+  $("rE").innerHTML=`${r.e.toFixed(1)}<small> J</small>`;
+  $("rB").innerHTML=`${r.b.toFixed(1)}<small> °</small>`;
+  $("rS").innerHTML=`${r.p.toFixed(0)}<small> %</small>`;
+  $("rM").innerHTML=`<span class="mode ${r.m[1]}">${r.m[0]}</span>`;
+  for(const id of["rE","rB","rS","rM"]){const el=$(id);el.classList.remove("pop");void el.offsetWidth;el.classList.add("pop")}
+  const n=STEELS[r.k].name,tt=`${r.t>0?"+":""}${r.t} °C`;
+  $("verdict").innerHTML=r.m[1]==="brittle"
+    ?`<b>Snap!</b> At ${tt} the ${n.toLowerCase()} broke like glass and soaked up only ${r.e.toFixed(0)} J. The pendulum hardly slowed down.`
+    :r.m[1]==="ductile"
+    ?`<b>Tough!</b> At ${tt} the ${n.toLowerCase()} bent and tore, absorbing ${r.e.toFixed(0)} J. That energy came out of the pendulum's swing.`
+    :`<b>Transition zone.</b> At ${tt} the ${n.toLowerCase()} partly snapped and partly tore (${r.e.toFixed(0)} J). The DBTT is close to here.`;
+}
+
+function addBFromStrike(r){const b=100-Math.round(r.p),ex=bdata.findIndex(d=>d.k===r.k&&d.t===r.t);
+  if(ex<0)bdata.push({k:r.k,t:r.t,b,src:"strike"});else if(bdata[ex].src==="strike")bdata[ex].b=b}
+function addLog(r){log.push(r);addBFromStrike(r);renderLog();renderB();drawChart()}
+function renderLog(){if(typeof renderMission==="function"&&typeof bdata!=="undefined")renderMission();
+  $("logEmpty").hidden=log.length>0;
+  $("log").innerHTML=log.slice().reverse().map((r,i)=>`<tr><td>${log.length-i}</td><td><span class="sw" style="display:inline-block;vertical-align:-2px;margin-right:6px;background:var(${STEELS[r.k].col})"></span>${STEELS[r.k].name}</td><td class="n">${r.t>0?"+":""}${r.t}</td><td class="n">${r.e.toFixed(1)}</td><td class="n">${r.b.toFixed(1)}</td><td class="n">${r.p.toFixed(0)}</td><td class="n">${100-Math.round(r.p)}</td><td><span class="mode ${r.m[1]}" style="margin:0">${r.m[0]}</span></td></tr>`).join("");
+}
+
+// ---------- canvas helpers
+function fit(cv){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);const c=cv.getContext("2d");c.setTransform(d,0,0,d,0,0);return[c,r.width,r.height]}
+
+function drawRig(){
+  // Side view: the pendulum swings in the plane of the screen; the specimen is seen end-on as its 10 x 10 mm cross-section
+  const [c,w,h]=fit($("rig"));
+  const ink=css("--ink"),mut=css("--muted"),line=css("--line"),st=css("--steel"),ac=css("--accent"),sc=css(STEELS[sel].col),bg=css("--bg"),pn=css("--panel");
+  const base=h-12,R=Math.min(w*0.36,(h-90)/2.05),px=w/2,py=24+R*0.866+R*0.12;
+  const sy=py+R,sz=Math.max(18,R*0.11);           // specimen centre height and size
+  const hit=R*0.11;                                 // striker reach in front of the hammer centre
+  c.clearRect(0,0,w,h);
+  // machine column (behind the pendulum) and base
+  c.fillStyle=line;c.fillRect(px-R*0.07,py,R*0.14,base-py);
+  c.fillRect(px-R*0.75,base,R*1.5,8);
+  c.beginPath();c.arc(px,py,R*0.11,0,7);c.fill();
+  // angle scale
+  c.strokeStyle=mut;c.lineWidth=1;c.setLineDash([3,4]);c.beginPath();c.arc(px,py,R+12,Math.PI/2-ALPHA,Math.PI/2+ALPHA);c.stroke();c.setLineDash([]);
+  c.font="11px "+css("--f-mono");c.fillStyle=mut;c.textAlign="center";
+  for(let a=0;a<=150;a+=30){for(const sg of[-1,1]){const th=Math.PI/2+sg*a*Math.PI/180;
+    c.beginPath();c.moveTo(px+Math.cos(th)*(R+12),py+Math.sin(th)*(R+12));c.lineTo(px+Math.cos(th)*(R+20),py+Math.sin(th)*(R+20));c.stroke();
+    if(a&&a%60===0||a===150)c.fillText(a+"°",px+Math.cos(th)*(R+32),py+Math.sin(th)*(R+32)+4)}}
+  // specimen support and anvil (behind the swing plane, so drawn lighter)
+  const ax=px+hit+sz;                                // anvil face = back of specimen
+  c.fillStyle=st;c.globalAlpha=.35;
+  c.fillRect(px+hit*0.4,sy+sz/2,R*0.42,base-(sy+sz/2));          // support pedestal
+  c.globalAlpha=1;
+  // centering pin: the V-notch of the specimen leans against its nose
+  {const pw=Math.max(5,sz*0.32),top=sy-sz*0.95,bot=sy+sz/2;c.fillStyle=ink;
+   c.beginPath();c.moveTo(ax,bot);c.lineTo(ax,top+pw/2);c.arc(ax+pw/2,top+pw/2,pw/2,Math.PI,0);c.lineTo(ax+pw,bot);c.closePath();c.fill();
+   c.beginPath();c.moveTo(ax+1,sy-sz*0.15);c.lineTo(ax-sz*0.28,sy);c.lineTo(ax+1,sy+sz*0.15);c.closePath();c.fill();   // pin nose seated in the V-notch
+   c.strokeStyle=mut;c.lineWidth=1;c.beginPath();c.moveTo(ax+pw,top+pw);c.lineTo(ax+pw+sz*1.2,top-sz*0.8);c.stroke();
+   c.font="11px "+css("--f-mono");c.textAlign="left";const pt="Centering pin",ptw=c.measureText(pt).width;
+   c.fillStyle=pn;c.fillRect(ax+pw+sz*1.2+1,top-sz*0.8-11,ptw+4,15);c.fillStyle=mut;c.fillText(pt,ax+pw+sz*1.2+3,top-sz*0.8+1)}
+  // specimen: square cross-section, notch on the face away from the striker
+  const drawSpec=(x,y,rot,half)=>{c.save();c.translate(x,y);c.rotate(rot);c.fillStyle=sc;
+    if(half===0){c.beginPath();c.moveTo(-sz/2,-sz/2);c.lineTo(sz/2,-sz/2);c.lineTo(sz/2,-sz*0.18);c.lineTo(sz*0.15,0);c.lineTo(sz/2,sz*0.18);c.lineTo(sz/2,sz/2);c.lineTo(-sz/2,sz/2);c.closePath();c.fill()}
+    else{c.fillRect(-sz/2,-sz/2,sz,sz)}c.restore()};
+  if(!pend.broken){drawSpec(px+hit+sz/2,sy,0,0);
+    const nx=px+hit+sz*0.85,ny=sy;c.strokeStyle=mut;c.lineWidth=1;c.beginPath();c.moveTo(nx,ny);c.lineTo(nx-sz*0.6,sy-sz*2.2);c.stroke();
+    c.font="11px "+css("--f-mono");c.textAlign="right";const nt="V-notch faces away from striker",ntw=c.measureText(nt).width;c.fillStyle=pn;c.fillRect(nx-sz*0.6-5-ntw,sy-sz*2.2-15,ntw+4,15);c.fillStyle=mut;c.fillText(nt,nx-sz*0.6-3,sy-sz*2.2-3)}
+  else{const f=pend.flyL;drawSpec(px+hit+sz/2+f*1.6,sy-f*0.55,f*0.05,1);drawSpec(px+hit+sz/2+f*2.1,sy-f*0.2,-f*0.07,1)}
+  // rise pointer
+  if(pend.last!=null){const th=Math.PI/2-pend.last;c.strokeStyle=ac;c.lineWidth=2;c.beginPath();c.moveTo(px,py);c.lineTo(px+Math.cos(th)*(R+20),py+Math.sin(th)*(R+20));c.stroke()}
+  // pendulum arm and hammer (local frame: +y points away from the pivot, +x is the swing direction)
+  const th=Math.PI/2+pend.ang,hx=px+Math.cos(th)*R,hy=py+Math.sin(th)*R;
+  c.strokeStyle=ink;c.lineWidth=5;c.beginPath();c.moveTo(px,py);c.lineTo(hx,hy);c.stroke();
+  c.save();c.translate(hx,hy);c.rotate(th-Math.PI/2);
+  const hr=R*0.12;
+  c.fillStyle=st;c.beginPath();c.arc(-hr*0.15,0,hr,0,7);c.fill();                    // hammer disc
+  c.fillStyle=pn;c.beginPath();c.arc(-hr*0.15,0,hr*0.35,0,7);c.fill();
+  c.fillStyle=ink;c.beginPath();c.moveTo(hr*0.7,-hr*0.32);c.lineTo(hit,0);c.lineTo(hr*0.7,hr*0.32);c.closePath();c.fill();  // striker edge
+  c.restore();
+  c.fillStyle=ink;c.beginPath();c.arc(px,py,6,0,7);c.fill();
+  c.textAlign="left";c.fillStyle=mut;c.font="12px "+css("--f-mono");
+  c.fillText(`α = 150°   T = ${T>0?"+":""}${T} °C`,8,18);
+  c.fillText("Side view",8,base-6);
+  c.textAlign="right";c.fillStyle=ink;c.font="600 12px "+css("--f-mono");c.fillText("ZwickRoell HIT450P",w-8,18);
+  c.fillStyle=mut;c.font="11px "+css("--f-mono");c.fillText("max 450 J",w-8,33);
+}
+
+function animate(r){return new Promise(res=>{
+  busy=true;$("strike").disabled=true;
+  pend.broken=false;pend.flyL=0;pend.last=null;pend.ang=ALPHA;
+  const B=r.b*Math.PI/180;let ph=0,t0=null;
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce){fractureSound(r.p,r.e);pend.broken=true;pend.flyL=40;pend.ang=-B;pend.last=B;drawRig();busy=false;$("strike").disabled=false;return res()}
+  function step(ts){if(!t0)t0=ts;const el=(ts-t0)/1000;
+    if(ph===0){const k=Math.min(1,el/0.55);pend.ang=ALPHA*Math.cos(k*Math.PI/2);if(k>=1){ph=1;t0=ts;pend.broken=true;fractureSound(r.p,r.e)}}
+    else if(ph===1){const k=Math.min(1,el/0.55);pend.ang=-B*Math.sin(k*Math.PI/2);pend.flyL=k*60;if(k>=1){ph=2;pend.last=B;t0=ts}}
+    else{const k=Math.min(1,el/0.4);pend.ang=-B*(1-0.25*Math.sin(k*Math.PI/2));if(k>=1){drawRig();busy=false;$("strike").disabled=false;return res()}}
+    drawRig();requestAnimationFrame(step)}
+  requestAnimationFrame(step)})}
+
+$("strike").onclick=async()=>{if(busy)return;audio();
+  {const ts=tempsTested(sel);if(ts.length<MIN_T&&ts.includes(T)){const p=$("tempPanel");p.classList.remove("flash");void p.offsetWidth;p.classList.add("flash");
+    p.scrollIntoView({behavior:"smooth",block:"center"});say(`You already tested ${fT(T)}. Please select your ${nextOrd(sel)} temperature first.`);return}}const prev=log[log.length-1],prevPend=prev&&!(prev.k===sel&&prev.t===T)&&pendingList().some(x=>x.k===prev.k&&x.t===prev.t)?prev:null;const r=test(sel,T),n0=tempsTested(sel).length;await animate(r);show(r);addLog(r);say($("verdict").textContent+` Shear fracture ${Math.round(r.p)}%, so brittle fracture is ${100-Math.round(r.p)}%.`+tMsg(n0)+(prevPend?` Reminder: you still haven't recorded the % brittle reading for ${fT(prevPend.t)}.`:""));askAgain()};
+let armT=null;
+$("clear").onclick=()=>{if(busy)return;const b=$("clear");
+  if(!armT){b.textContent="Tap again to confirm";b.style.borderColor="var(--high)";b.style.color="var(--high)";
+    armT=setTimeout(()=>{armT=null;b.textContent="Erase all data";b.style.borderColor=b.style.color=""},3000);return}
+  clearTimeout(armT);armT=null;b.textContent="Erase all data";b.style.borderColor=b.style.color="";
+  log=[];renderLog();bdata=[];renderB();showBEx(null);$("verdict").textContent="All data erased. Pick a steel, set a temperature, then release the pendulum.";say("All data erased. Start again with step 1.");
+  $("rE").innerHTML="—<small> J</small>";$("rB").innerHTML="—<small> °</small>";$("rS").innerHTML="—<small> %</small>";
+  $("rM").innerHTML='<span class="mode" style="color:var(--muted)">awaiting strike</span>';
+  pend.broken=false;pend.ang=ALPHA;pend.last=null;drawRig();drawChart()};
+
+// ---------- % brittle (fracture appearance)
+let bdata=[];
+const brModel=(k,t)=>100-shear(k,E(k,t));
+for(const k in STEELS){const o=document.createElement("option");o.value=k;o.textContent=STEELS[k].name;$("bSteel").appendChild(o)}
+function fattFromData(k){if(!ready(k))return null;const f=fitB(bdata.filter(d=>d.k===k));return f&&f.Tf>=-50&&f.Tf<=100?f.Tf:null}
+function renderMission(){let done=0;
+  $("mission").innerHTML=Object.keys(STEELS).map(k=>{const s=STEELS[k],nt=log.filter(r=>r.k===k).length,pts=bdata.filter(d=>d.k===k);
+    const ok=dbttFor(k)!=null;if(ok)done++;
+    return `<div class="mrow"><span class="dot" style="background:var(${s.col})"></span><span>${s.name}<small>${Math.min(tempsTested(k).length,MIN_T)} of ${MIN_T} temperatures tested</small></span><span class="chip${ok?" done":""}">${ok?"DBTT found":"to do"}</span></div>`}).join("");
+  $("mbar").style.width=(done/3*100)+"%";
+  $("mtxt").textContent=done===3?"Mission complete. Compare the three DBTTs: which steel is safest in winter?":`${done} of 3 found. Test at least 4 temperatures for each steel, some above and some below its transition.`}
+// readings the student still has to record: specimens broken but no % brittle entered yet
+function pendingList(){const seen=new Set(),out=[];for(const r of log){const key=r.k+"|"+r.t;if(seen.has(key))continue;seen.add(key);
+  const d=bdata.find(x=>x.k===r.k&&x.t===r.t);if(!d||d.src!=="entered")out.push(r)}return out}
+const fT=t=>`${t>0?"+":""}${t} °C`;
+function goEnter(k,t){$("bSteel").value=k;$("bTemp").value=t;$("bPct").value="";$("bPct").classList.remove("bad");$("bErr").hidden=true;
+  const f=$("bform");f.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});
+  f.classList.remove("flash");void f.offsetWidth;f.classList.add("flash");setTimeout(()=>$("bPct").focus({preventScroll:true}),350)}
+function renderPending(){const p=pendingList(),box=$("bPend"),nd=$("nudge");
+  if(!p.length){box.hidden=true;nd.hidden=true;return}
+  box.hidden=false;box.innerHTML=`<b>${p.length} % brittle reading${p.length===1?"":"s"} still to record</b><div class="chips">${p.map(r=>`<button type="button" data-k="${r.k}" data-t="${r.t}">${STEELS[r.k].name} · ${fT(r.t)}</button>`).join("")}</div>`;
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>goEnter(b.dataset.k,+b.dataset.t));
+  const last=log[log.length-1],lastPend=last&&p.some(r=>r.k===last.k&&r.t===last.t);
+  if(lastPend){const sh=Math.round(last.p);nd.hidden=false;
+    nd.innerHTML=`<span><b>Record your reading.</b> Enter the % brittle for this specimen (${fT(last.t)}). Hint: 100% − ${sh}% shear.</span><button type="button" id="nudgeGo">Enter % brittle</button>`;
+    $("nudgeGo").onclick=()=>goEnter(last.k,last.t)}else nd.hidden=true}
+for(const id of["bTemp","bPct"])document.getElementById(id).addEventListener("input",()=>{document.getElementById(id).classList.remove("bad");document.getElementById("bErr").hidden=true});
+function renderB(){renderMission();renderPending();
+  $("bEmpty").hidden=bdata.length>0;
+  const rows=bdata.map((d,i)=>({d,i})).sort((x,y)=>x.d.k.localeCompare(y.d.k)||x.d.t-y.d.t);
+  $("bBody").innerHTML=rows.map(({d,i})=>`<tr><td><span class="sw" style="display:inline-block;vertical-align:-2px;margin-right:6px;background:var(${STEELS[d.k].col})"></span>${STEELS[d.k].name}</td><td class="n">${d.t>0?"+":""}${d.t}</td><td class="n">${d.b}</td><td class="n">${100-d.b}</td><td><span class="chip">${d.src==="entered"?"your estimate":"strike · 100% − shear"}</span></td><td class="n"><button class="del" data-i="${i}" aria-label="Remove this point">Remove</button></td></tr>`).join("");
+  $("bBody").querySelectorAll(".del").forEach(b=>b.onclick=()=>{bdata.splice(+b.dataset.i,1);renderB()});
+  $("bLegend").innerHTML=Object.keys(STEELS).map(k=>{const s=STEELS[k],f=fattFromData(k),n=bdata.filter(d=>d.k===k).length;
+    return `<span><i style="background:var(${s.col})"></i>${s.name}: ${n?`your FATT ${f==null?"not bracketed yet":"≈ "+(f>0?"+":"")+f.toFixed(0)+" °C"}`:"no points"}</span>`}).join("");
+  drawChart();
+}
+$("bform").onsubmit=e=>{e.preventDefault();const err=$("bErr");
+  const t=$("bTemp").value.trim(),p=$("bPct").value.trim();
+  const bad=(id,msg)=>{const el=$(id);el.classList.add("bad");el.classList.remove("shake");void el.offsetWidth;el.classList.add("shake");err.textContent=msg;err.hidden=false;say(msg);el.focus()};
+  $("bTemp").classList.remove("bad");$("bPct").classList.remove("bad");
+  if(t===""||isNaN(+t)||+t<-50||+t>100)return bad("bTemp","Enter the test temperature, between −50 and 100 °C.");
+  if(p==="")return bad("bPct","You haven't entered the % brittle reading. Work it out with % Brittle = 100% − % Shear, then press Plot point.");
+  if(isNaN(+p)||+p<0||+p>100)return bad("bPct","% brittle must be a number from 0 to 100.");
+  err.hidden=true;const k=$("bSteel").value,tt=Math.round(+t),bb=Math.round(+p);
+  const ex=bdata.findIndex(d=>d.k===k&&d.t===tt);if(ex>=0){bdata[ex].b=bb;bdata[ex].src="entered"}else bdata.push({k,t:tt,b:bb,src:"entered"});
+  const before=foundSet();$("bPct").value="";renderB();$("bPct").focus();
+  const after=foundSet(),newK=[...after].find(x=>!before.has(x));
+  let msg=`Plotted ${bb}% brittle at ${tt} °C for ${STEELS[k].name}.`;
+  if(after.size===3&&before.size<3)msg+=" Mission complete! You found all three transition temperatures.";
+  else if(newK){if(k!==sel){sel=k;sync()}msg+=" "+$("dbttNote").textContent.split(",")[0]+". D B T T found!"}
+  if(tempsTested(k).length<MIN_T){if(k!==sel){sel=k;sync()}msg+=` Now select your ${nextOrd(k)} temperature in step 2.`;const p=$("tempPanel");p.classList.remove("flash");void p.offsetWidth;p.classList.add("flash");askAgain()}
+  say(msg)};
+function foundSet(){const f=new Set();for(const k in STEELS){const nt=log.filter(r=>r.k===k).length,pts=bdata.filter(d=>d.k===k);if(dbttFor(k)!=null)f.add(k)}return f}
+// % brittle transition curve: best-fit S-curve B(T) = 50 [1 - tanh((T - Tf)/Cf)] through the entered points (least squares)
+function fitB(pts){if(pts.length<2)return null;let best=null;
+  for(let Tf=-80;Tf<=140;Tf+=0.5)for(let Cf=3;Cf<=60;Cf+=0.5){let e=0;for(const p of pts){const r=p.b-50*(1-Math.tanh((p.t-Tf)/Cf));e+=r*r}if(!best||e<best.e)best={e,Tf,Cf}}
+  const f=t=>50*(1-Math.tanh((t-best.Tf)/best.Cf));f.Tf=best.Tf;f.Cf=best.Cf;return f}
+function smoothB(pts){return fitB(pts)}
+const ORD=["1st","2nd","3rd","4th"];
+const nextOrd=k=>ORD[Math.min(tempsTested(k).length,MIN_T-1)];
+let askTimer=null,askRepeats=0;
+function renderAsk(){const ts=tempsTested(sel),n=ts.length,box=$("askT"),pn=$("tempPanel");
+  if(n>=MIN_T){box.hidden=true;pn.classList.remove("ask");return}
+  box.hidden=false;const o=ORD[n],dup=ts.includes(T);
+  box.className="asktemp"+(dup?" need":"");
+  box.innerHTML=dup
+    ?`<b>Select your ${o} temperature.</b> You already tested ${fT(T)}. Move the slider to a new temperature.`
+    :`<b>Your ${o} temperature: ${fT(T)}.</b> ${n===0?"Start anywhere from −50 to 100 °C.":"Pick it far from the ones you've done."} Then release the pendulum.`;
+  pn.classList.toggle("ask",dup||n===0)}
+function askAgain(){clearTimeout(askTimer);askRepeats=0;scheduleAsk()}
+function scheduleAsk(){clearTimeout(askTimer);const n=tempsTested(sel).length;if(n>=MIN_T||!tempsTested(sel).includes(T)||askRepeats>=3)return;
+  askTimer=setTimeout(()=>{if(busy||tempsTested(sel).length>=MIN_T||!tempsTested(sel).includes(T))return;askRepeats++;
+    say(`Please select your ${nextOrd(sel)} temperature for ${STEELS[sel].name}. Use the slider in step 2.`);
+    const p=$("tempPanel");p.classList.remove("flash");void p.offsetWidth;p.classList.add("flash");scheduleAsk()},25000)}
+function tMsg(n0){const n=tempsTested(sel).length;
+  if(n===MIN_T&&n0<MIN_T)return ` That's ${MIN_T} temperatures. Your brittle curve and D B T T are now on the graph. Record this % brittle reading in step 4.`;
+  if(n<MIN_T)return ` ${n} of ${MIN_T} done. Record the % brittle reading in step 4, then select your ${ORD[n]} temperature.`;return " Record the % brittle reading in step 4."}
+function renderTCount(){renderAsk();const s=STEELS[sel],ts=tempsTested(sel),n=ts.length,f=t=>`${t>0?"+":""}${t} °C`;
+  const slots=Array.from({length:MIN_T},(_,i)=>`<div class="slot${i<n?" on":""}">${i<n?f(ts[i]):i+1}</div>`).join("");
+  $("tcount").innerHTML=`<b>${s.name}: ${Math.min(n,MIN_T)} of ${MIN_T} temperatures tested</b>${n>=MIN_T?" · graph unlocked":""}<div class="bar">${slots}</div>`+
+    (n>MIN_T?`<div class="more">Also tested: ${ts.slice(MIN_T).map(f).join(", ")}</div>`:"")+
+    (n<MIN_T?`<div class="more">Test ${MIN_T-n} more temperature${MIN_T-n===1?"":"s"}. Spread them out, some cold and some warm.</div>`:"")}
+function renderProps(){renderTCount();const s=STEELS[sel];
+  $("props").innerHTML=`<dt>Grade</dt><dd>${s.grade}</dd><dt>Energy Absorb (Joules)</dt><dd>${E(sel,T).toFixed(1)} J at ${T>0?"+":""}${T} °C</dd><dt>Your DBTT</dt><dd>${fmtD(dbttFor(sel))}</dd><dt>Your 50% FATT</dt><dd>${fmtD(fattFromData(sel))}</dd><dt>T at 27 J</dt><dd>${fmtT(Tat(sel,27))}</dd>`;}
+function yMax(k){const raw=STEELS[k].US*1.1,st=[5,10,20,25,40,50].find(q=>Math.ceil(raw/q)<=6)||50;return{ymax:Math.ceil(raw/st)*st,ystep:st}}
+// student's DBTT: where the energy curve meets their fitted % brittle curve on the chart; null until they have enough readings
+function dbttFor(k){const pts=bdata.filter(d=>d.k===k).sort((a,b)=>a.t-b.t);if(pts.length<2||!ready(k))return null;
+  const bAt=smoothB(pts),ym=yMax(k).ymax;let prev=null;
+  for(let t=-50;t<=100;t+=0.05){const d=E(k,t)/ym-bAt(t)/100;if(prev&&prev.d*d<=0){const f=prev.d===d?0:prev.d/(prev.d-d);return prev.t+f*(t-prev.t)}prev={t,d}}return null}
+const fmtD=v=>v==null?"not found yet":`${v>0?"+":""}${v.toFixed(1)} °C`;
+function drawChart(){renderProps();
+  const [c,w,h]=fit($("chart"));
+  const ink=css("--ink"),mut=css("--muted"),line=css("--line"),ac=css("--accent");
+  const L=52,Rm=52,Tp=14,B=40,W=w-L-Rm,H=h-Tp-B;
+  const {ymax,ystep}=yMax(sel),X=t=>L+(t+50)/150*W,Y=e=>Tp+H-e/ymax*H;
+  c.clearRect(0,0,w,h);
+  // transition band for selected
+  const s=STEELS[sel],dbHit=dbttFor(sel);c.fillStyle=css(s.col);c.globalAlpha=dbHit==null?0:.08;const x1=X(Math.max(-50,s.T0-s.C*1.2)),x2=X(Math.min(100,s.T0+s.C*1.2));c.fillRect(x1,Tp,x2-x1,H);c.globalAlpha=1;
+  // grid
+  c.font="11px "+css("--f-mono");c.fillStyle=mut;c.strokeStyle=line;c.lineWidth=1;
+  c.textAlign="right";for(let e=0;e<=ymax;e+=ystep){c.beginPath();c.moveTo(L,Y(e));c.lineTo(L+W,Y(e));c.stroke();c.fillText(e,L-6,Y(e)+4)}
+  c.textAlign="center";for(let t=-50;t<=100;t+=25){c.beginPath();c.moveTo(X(t),Tp);c.lineTo(X(t),Tp+H);c.stroke();c.fillText(t,X(t),Tp+H+16)}
+  c.strokeStyle=ink;c.beginPath();c.moveTo(L,Tp);c.lineTo(L,Tp+H);c.lineTo(L+W,Tp+H);c.stroke();
+  c.fillStyle=mut;c.font="12px "+css("--f-body");c.fillText("Test temperature (°C)",L+W/2,h-4);
+  c.save();c.fillStyle=css(s.col);c.font="600 12px "+css("--f-body");c.translate(13,Tp+H/2);c.rotate(-Math.PI/2);c.fillText("Absorbed energy (J)  ○",0,0);c.restore();
+  // 27 J criterion line
+  c.strokeStyle=mut;c.lineWidth=1;c.setLineDash([6,4]);c.beginPath();c.moveTo(L,Y(27));c.lineTo(L+W,Y(27));c.stroke();c.setLineDash([]);
+  c.fillStyle=mut;c.font="11px "+css("--f-mono");c.textAlign="right";c.fillText("27 J criterion",L+W-4,Y(27)-5);c.textAlign="center";
+  // curves
+  renderLegend();
+  for(const k in STEELS){if(k!==sel)continue;const S=STEELS[k];c.strokeStyle=css(S.col);c.lineWidth=3;c.globalAlpha=1;c.beginPath();
+    for(let t=-50;t<=100;t+=1){const y=Y(E(k,t));t===-50?c.moveTo(X(t),y):c.lineTo(X(t),y)}c.stroke();
+    c.globalAlpha=1}
+  // logged points
+  const lg=log.filter(r=>r.k===sel);
+  for(const r of lg){c.fillStyle=css("--panel");c.strokeStyle=css(s.col);c.lineWidth=2;c.beginPath();c.arc(X(r.t),Y(r.e),4,0,7);c.fill();c.stroke()}
+  c.font="600 11px "+css("--f-mono");c.textAlign="left";
+  for(const r of lg){if(r.t===T)continue;const tx=`${r.e.toFixed(1)} J`,tw=c.measureText(tx).width;let lx=X(r.t)+8;if(lx+tw>L+W)lx=X(r.t)-8-tw;const ly=Math.max(Tp+10,Y(r.e)-8);
+    c.fillStyle=css("--panel");c.fillRect(lx-2,ly-10,tw+4,13);c.fillStyle=css(s.col);c.fillText(tx,lx,ly)}
+  // % brittle (right axis, user-entered)
+  const Yb=p=>Tp+H-p/100*H;
+  c.strokeStyle=ink;c.lineWidth=1;c.beginPath();c.moveTo(L+W,Tp);c.lineTo(L+W,Tp+H);c.stroke();
+  c.fillStyle=css("--brittle");c.font="11px "+css("--f-mono");c.textAlign="left";
+  for(let p=0;p<=100;p+=25){c.beginPath();c.moveTo(L+W,Yb(p));c.lineTo(L+W+4,Yb(p));c.stroke();c.fillText(p,L+W+7,Yb(p)+4)}
+  c.save();c.translate(w-8,Tp+H/2);c.rotate(Math.PI/2);c.textAlign="center";c.font="12px "+css("--f-body");c.font="600 12px "+css("--f-body");c.fillText("Brittle fracture (%)  ■",0,0);c.restore();
+  for(const k in STEELS){if(k!==sel)continue;const pts=bdata.filter(d=>d.k===k).sort((a,b)=>a.t-b.t);if(!pts.length)continue;const col=css("--brittle");
+    const fb=ready(k)?fitB(pts):null;if(fb){c.strokeStyle=col;c.lineWidth=2;c.setLineDash([6,4]);c.beginPath();
+    for(let t=-50,i=0;t<=100;t+=0.5,i++){const y=Yb(fb(t));i?c.lineTo(X(t),y):c.moveTo(X(t),y)}c.stroke();c.setLineDash([])}
+    c.fillStyle=col;for(const d of pts)c.fillRect(X(d.t)-4.5,Yb(d.b)-4.5,9,9);
+    c.font="600 11px "+css("--f-mono");c.textAlign="left";for(const d of pts){const tx=`${d.b}%`,lx=X(d.t)+8,ly=Math.max(Tp+10,Yb(d.b)-7),tw=c.measureText(tx).width;c.fillStyle=css("--panel");c.fillRect(lx-2,ly-10,tw+4,13);c.fillStyle=col;c.fillText(tx,lx,ly)}}
+  // current temp cursor
+  const cx=X(T),ce=E(sel,T);c.strokeStyle=ac;c.lineWidth=1.5;c.beginPath();c.moveTo(cx,Tp);c.lineTo(cx,Tp+H);c.stroke();
+  c.fillStyle=ac;c.beginPath();c.arc(cx,Y(ce),5,0,7);c.fill();
+  const lbl=`${ce.toFixed(0)} J @ ${T}°C`;c.font="600 11px "+css("--f-mono");const tw=c.measureText(lbl).width;
+  let lx=cx+8;if(lx+tw>L+W)lx=cx-8-tw;const ly=Math.max(Tp+12,Y(ce)-10);
+  c.fillStyle=css("--panel");c.fillRect(lx-3,ly-11,tw+6,15);c.fillStyle=ac;c.textAlign="left";c.fillText(lbl,lx,ly);
+  // DBTT: shown only once the student's readings give an intersection
+  const hT=dbttFor(sel);
+  if(hT!=null){const dx=X(hT),dy=Y(E(sel,hT)),dc=css(s.col);
+    c.strokeStyle=ink;c.lineWidth=1.2;c.setLineDash([4,3]);c.beginPath();c.moveTo(dx,dy);c.lineTo(dx,Tp+H);c.stroke();c.setLineDash([]);
+    c.fillStyle=css("--panel");c.strokeStyle=ink;c.lineWidth=2.5;c.beginPath();c.arc(dx,dy,7,0,7);c.fill();c.stroke();
+    c.fillStyle=dc;c.beginPath();c.arc(dx,dy,3.5,0,7);c.fill();
+    c.font="600 11px "+css("--f-mono");c.fillStyle=ink;c.textAlign=dx>L+W*0.7?"right":"left";c.fillText("Intersection",dx+(dx>L+W*0.7?-12:12),dy+4);
+    const dl=`DBTT = ${hT>0?"+":""}${hT.toFixed(1)} °C`;c.font="700 12px "+css("--f-mono");const dw=c.measureText(dl).width+12;
+    let bx=Math.min(Math.max(dx-dw/2,L+2),L+W-dw-2);const by=Tp+H-26;
+    c.fillStyle=ink;c.fillRect(bx,by,dw,19);c.fillStyle=css("--panel");c.textAlign="center";c.fillText(dl,bx+dw/2,by+13.5)}
+  $("dbttNote").innerHTML=hT!=null
+    ?`<b>DBTT ≈ ${fmtD(hT)}</b> for ${s.name}, where the absorbed energy curve crosses your % brittle curve (energy ${E(sel,hT).toFixed(0)} J).`
+    :ready(sel)
+      ?`<b>DBTT not found yet</b> for ${s.name}. Your 4 temperatures don't cross the transition yet. Test colder or warmer until the % brittle curve crosses the energy curve.`
+      :`<b>DBTT not found yet</b> for ${s.name}. Test at least ${MIN_T} different temperatures (${tempsTested(sel).length} done so far). The brittle curve and DBTT appear once all ${MIN_T} are in.`;
+}
+
+addEventListener("resize",()=>{drawRig();drawChart()});
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{drawRig();drawChart()});
+new MutationObserver(()=>{drawRig();drawChart()}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+
+// example starting state: a few logged mild-steel results
+for(const t of [-40,-20,0,20]){log.push(test("mild",t))}
+const FACTS=[
+ "During World War II, some welded Liberty ships cracked in cold North Atlantic water. A few split in two, one while it was tied up in harbour. Steel that is tough in summer can turn brittle below its transition temperature.",
+ "Tests on steel recovered from the Titanic found it was brittle at the ice-cold water temperature of that night. It absorbed far less impact energy than modern ship steel.",
+ "The test is named after Georges Charpy, a French scientist who developed the swinging-pendulum method around 1901. Labs still use the same idea today.",
+ "Engineers often require at least 27 J at the lowest temperature a structure will see. That is the dashed line on your graph.",
+ "Pipelines, bridges and offshore platforms in cold places are made from steel with a low transition temperature, so they stay tough in winter."];
+let fi=0;const showFact=()=>{$("factTxt").textContent=FACTS[fi]};$("factNext").onclick=()=>{fi=(fi+1)%FACTS.length;showFact();say(FACTS[fi])};showFact();
+function setVoice(on){voiceOn=on;try{localStorage.setItem("charpyVoice",on?"on":"off")}catch(e){}
+  const b=$("voiceBtn");b.setAttribute("aria-pressed",on);$("voiceLbl").textContent=on?"Voice cues on":"Voice cues off";
+  if(!on&&canSpeak){try{speechSynthesis.cancel()}catch(e){}b.classList.remove("talking")}}
+function setSfx(on){sfxOn=on;try{localStorage.setItem("charpySfx",on?"on":"off")}catch(e){}$("sfxBtn").setAttribute("aria-pressed",on);$("sfxLbl").textContent=on?"Sound on":"Sound off"}
+$("sfxBtn").onclick=()=>{setSfx(!sfxOn);if(sfxOn)fractureSound(0,40)};
+if(!(window.AudioContext||window.webkitAudioContext))$("sfxBtn").hidden=true;else setSfx(sfxOn);
+$("voiceBtn").onclick=()=>{setVoice(!voiceOn);if(voiceOn)say("Voice cues on. Step 1: pick your steel.")};
+if(!canSpeak){$("voiceBtn").hidden=true}else setVoice(voiceOn);
+// example: % brittle for the example strikes, from % Brittle = 100% - % Shear
+bdata=[];for(const r of log)addBFromStrike(r);
+renderLog();sync();show(log[log.length-1]);renderB();
+document.fonts?.ready.then(()=>{drawRig();drawChart()});
+</script>
+
+</body></html>
